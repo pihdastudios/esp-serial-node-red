@@ -9,9 +9,11 @@ void DHT_task(void *pvParameter)
         int ret = dht.readDHT();
         dht.errorHandler(ret);
 
+        xSemaphoreTake(mutex, portMAX_DELAY);
         std::cout << "====" << std::endl;
         std::cout << "Hum  : " << dht.getHumidity() << std::endl;
         std::cout << "Temp : " << dht.getTemperature() << std::endl;
+        xSemaphoreGive(mutex);
 
         // -- wait at least 2 sec before reading again ------------
         // The interval of whole process must be beyond 2 seconds !!
@@ -28,7 +30,6 @@ void IRAM_ATTR button_isr_handler(void *pvParameter)
 // task that will react to button clicks
 void button_task(void *pvParameter)
 {
-    bool led_status = false;
     while (1)
     {
         vTaskSuspend(nullptr);
@@ -39,9 +40,29 @@ void button_task(void *pvParameter)
             last_interrupt_time = interrupt_time;
             led_status = !led_status;
             gpio_set_level(LED_PIN, led_status);
+            xSemaphoreTake(mutex, portMAX_DELAY);
             std::cout << "Button pressed!!!" << std::endl;
+            xSemaphoreGive(mutex);
         }
     }
+}
+
+void serial_task(void *pvParameter)
+{
+    while (1)
+    {
+        std::string s;
+        std::cin >> s;
+        xSemaphoreTake(mutex, portMAX_DELAY);
+        std::cout << s << std::endl;
+        xSemaphoreGive(mutex);
+        if (s == "toggle")
+        {
+            led_status = !led_status;
+            gpio_set_level(LED_PIN, led_status);
+        }
+    }
+    vTaskDelete(nullptr);
 }
 
 void app_main()
@@ -54,6 +75,7 @@ void app_main()
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+    setvbuf(stdin, nullptr, _IONBF, 0);
 
     gpio_pad_select_gpio(BTN_PIN);
     gpio_pad_select_gpio(LED_PIN);
@@ -75,9 +97,19 @@ void app_main()
     // attach the interrupt service routine
     gpio_isr_handler_add(BTN_PIN, button_isr_handler, nullptr);
 
+    mutex = xSemaphoreCreateMutex();
+
+    // Disable buffer
+    setvbuf(stdin, nullptr, _IONBF, 0);
+    setvbuf(stdout, nullptr, _IONBF, 0);
+
+    // Enable cin uart
+    esp_vfs_dev_uart_use_driver(0);
+    ESP_ERROR_CHECK(uart_driver_install((uart_port_t)CONFIG_ESP_CONSOLE_UART_NUM,
+                                        256, 0, 0, nullptr, 0));
+
     //Create and start stats task
-
     xTaskCreate(button_task, "button_task", 4096, nullptr, 10, &ISR);
-
     xTaskCreate(&DHT_task, "DHT_task", 2048, nullptr, 5, nullptr);
+    xTaskCreate(&serial_task, "serial_task", 2048, nullptr, 5, nullptr);
 }
