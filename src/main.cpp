@@ -1,23 +1,4 @@
-// #include <stdio.h>
-#include <iostream>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include "esp_system.h"
-#include "freertos/event_groups.h"
-#include "esp_event.h"
-#include "nvs_flash.h"
-#include "esp_log.h"
-#include "driver/gpio.h"
-
-#include "DHT.hpp"
-#define LED_PIN GPIO_NUM_23
-#define DHT_PIN GPIO_NUM_4
-#define BTN_PIN GPIO_NUM_5
-
-extern "C"
-{
-    void app_main();
-}
+#include "main.hpp"
 
 void DHT_task(void *pvParameter)
 {
@@ -38,8 +19,6 @@ void DHT_task(void *pvParameter)
     }
 }
 
-TaskHandle_t ISR = NULL;
-
 // interrupt service routine, called when the button is pressed
 void IRAM_ATTR button_isr_handler(void *pvParameter)
 {
@@ -52,10 +31,16 @@ void button_task(void *pvParameter)
     bool led_status = false;
     while (1)
     {
-        vTaskSuspend(NULL);
-        led_status = !led_status;
-        gpio_set_level(LED_PIN, led_status);
-        std::cout << "Button pressed!!!" << std::endl;
+        vTaskSuspend(nullptr);
+        static int64_t last_interrupt_time = 0;
+        int64_t interrupt_time = esp_timer_get_time();
+        if (interrupt_time - last_interrupt_time > 200000)
+        {
+            last_interrupt_time = interrupt_time;
+            led_status = !led_status;
+            gpio_set_level(LED_PIN, led_status);
+            std::cout << "Button pressed!!!" << std::endl;
+        }
     }
 }
 
@@ -77,6 +62,9 @@ void app_main()
     gpio_set_direction(BTN_PIN, GPIO_MODE_INPUT);
     gpio_set_direction(LED_PIN, GPIO_MODE_OUTPUT);
 
+    //set pullup mode
+    gpio_set_pull_mode(BTN_PIN, GPIO_PULLUP_ONLY);
+
     // enable interrupt on falling (1->0) edge for button pin
     gpio_set_intr_type(BTN_PIN, GPIO_INTR_NEGEDGE);
 
@@ -85,10 +73,11 @@ void app_main()
     gpio_install_isr_service(0);
 
     // attach the interrupt service routine
-    gpio_isr_handler_add(BTN_PIN, button_isr_handler, NULL);
+    gpio_isr_handler_add(BTN_PIN, button_isr_handler, nullptr);
 
     //Create and start stats task
 
-    xTaskCreate(&DHT_task, "DHT_task", 2048, NULL, 5, NULL);
-    xTaskCreate(button_task, "button_task", 4096, NULL, 10, &ISR);
+    xTaskCreate(button_task, "button_task", 4096, nullptr, 10, &ISR);
+
+    xTaskCreate(&DHT_task, "DHT_task", 2048, nullptr, 5, nullptr);
 }
