@@ -7,17 +7,15 @@ void DHT_task(void *pvParameter)
     while (1)
     {
         int ret = dht.readDHT();
-        dht.errorHandler(ret);
-
-        xSemaphoreTake(mutex, portMAX_DELAY);
-        std::cout << "====" << std::endl;
-        std::cout << "Hum  : " << dht.getHumidity() << std::endl;
-        std::cout << "Temp : " << dht.getTemperature() << std::endl;
-        xSemaphoreGive(mutex);
-
-        // -- wait at least 2 sec before reading again ------------
-        // The interval of whole process must be beyond 2 seconds !!
-        vTaskDelay(2500 / portTICK_RATE_MS);
+        if (ret == DHT_OK)
+        {
+            xSemaphoreTake(mutex, portMAX_DELAY);
+            std::cout << "====" << std::endl;
+            std::cout << "Hum  : " << dht.getHumidity() << std::endl;
+            std::cout << "Temp : " << dht.getTemperature() << std::endl;
+            xSemaphoreGive(mutex);
+            vTaskDelay(2000 / portTICK_RATE_MS);
+        }
     }
 }
 
