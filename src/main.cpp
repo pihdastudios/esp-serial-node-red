@@ -75,7 +75,10 @@ void app_main()
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+
+    // Disable buffer
     setvbuf(stdin, nullptr, _IONBF, 0);
+    setvbuf(stdout, nullptr, _IONBF, 0);
 
     gpio_pad_select_gpio(BTN_PIN);
     gpio_pad_select_gpio(LED_PIN);
@@ -98,10 +101,6 @@ void app_main()
     gpio_isr_handler_add(BTN_PIN, button_isr_handler, nullptr);
 
     mutex = xSemaphoreCreateMutex();
-
-    // Disable buffer
-    setvbuf(stdin, nullptr, _IONBF, 0);
-    setvbuf(stdout, nullptr, _IONBF, 0);
 
     // Enable cin uart
     esp_vfs_dev_uart_use_driver(0);
