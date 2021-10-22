@@ -11,13 +11,6 @@ void DHT_task(void *pvParameter)
         {
             //Serialize JSON
             cJSON *root = cJSON_CreateObject();
-            // std::ostringstream temp;
-            // temp << std::fixed << std::setprecision(2) << dht.getTemperature();
-            // std::ostringstream hum;
-            // hum << std::fixed << std::setprecision(2) << dht.getHumidity();
-            // cJSON_AddStringToObject(root, "temp", temp.str().c_str());
-            // cJSON_AddStringToObject(root, "hum", hum.str().c_str());
-
             cJSON_AddNumberToObject(root, "temp", dht.getTemperature());
             cJSON_AddNumberToObject(root, "hum", dht.getHumidity());
             xSemaphoreTake(mutex, portMAX_DELAY);
