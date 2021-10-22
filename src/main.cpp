@@ -9,11 +9,18 @@ void DHT_task(void *pvParameter)
         int ret = dht.readDHT();
         if (ret == DHT_OK)
         {
+            //Serialize JSON
+            cJSON *root = cJSON_CreateObject();
+            std::ostringstream temp;
+            temp << std::fixed << std::setprecision(2) << dht.getTemperature();
+            std::ostringstream hum;
+            hum << std::fixed << std::setprecision(2) << dht.getHumidity();
+            cJSON_AddStringToObject(root, "temp", temp.str().c_str());
+            cJSON_AddStringToObject(root, "hum", hum.str().c_str());
             xSemaphoreTake(mutex, portMAX_DELAY);
-            std::cout << "====" << std::endl;
-            std::cout << "Hum  : " << dht.getHumidity() << std::endl;
-            std::cout << "Temp : " << dht.getTemperature() << std::endl;
+            std::cout << cJSON_PrintUnformatted(root) << std::endl;
             xSemaphoreGive(mutex);
+            cJSON_Delete(root);
             vTaskDelay(2000 / portTICK_RATE_MS);
         }
     }
@@ -51,9 +58,6 @@ void serial_task(void *pvParameter)
     {
         std::string s;
         std::cin >> s;
-        xSemaphoreTake(mutex, portMAX_DELAY);
-        std::cout << s << std::endl;
-        xSemaphoreGive(mutex);
         if (s == "toggle")
         {
             led_status = !led_status;

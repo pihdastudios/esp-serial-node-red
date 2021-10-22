@@ -1,5 +1,7 @@
 #pragma once
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include "esp_system.h"
@@ -8,6 +10,8 @@
 #include "driver/gpio.h"
 #include "driver/uart.h"
 #include "esp_vfs_dev.h"
+
+#include "cJSON.h"
 
 #include "DHT.hpp"
 
