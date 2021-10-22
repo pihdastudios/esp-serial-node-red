@@ -11,12 +11,15 @@ void DHT_task(void *pvParameter)
         {
             //Serialize JSON
             cJSON *root = cJSON_CreateObject();
-            std::ostringstream temp;
-            temp << std::fixed << std::setprecision(2) << dht.getTemperature();
-            std::ostringstream hum;
-            hum << std::fixed << std::setprecision(2) << dht.getHumidity();
-            cJSON_AddStringToObject(root, "temp", temp.str().c_str());
-            cJSON_AddStringToObject(root, "hum", hum.str().c_str());
+            // std::ostringstream temp;
+            // temp << std::fixed << std::setprecision(2) << dht.getTemperature();
+            // std::ostringstream hum;
+            // hum << std::fixed << std::setprecision(2) << dht.getHumidity();
+            // cJSON_AddStringToObject(root, "temp", temp.str().c_str());
+            // cJSON_AddStringToObject(root, "hum", hum.str().c_str());
+
+            cJSON_AddNumberToObject(root, "temp", dht.getTemperature());
+            cJSON_AddNumberToObject(root, "hum", dht.getHumidity());
             xSemaphoreTake(mutex, portMAX_DELAY);
             std::cout << cJSON_PrintUnformatted(root) << std::endl;
             xSemaphoreGive(mutex);
@@ -45,9 +48,6 @@ void button_task(void *pvParameter)
             last_interrupt_time = interrupt_time;
             led_status = !led_status;
             gpio_set_level(LED_PIN, led_status);
-            xSemaphoreTake(mutex, portMAX_DELAY);
-            std::cout << "Button pressed!!!" << std::endl;
-            xSemaphoreGive(mutex);
         }
     }
 }
@@ -64,7 +64,6 @@ void serial_task(void *pvParameter)
             gpio_set_level(LED_PIN, led_status);
         }
     }
-    vTaskDelete(nullptr);
 }
 
 void app_main()
@@ -110,7 +109,7 @@ void app_main()
                                         256, 0, 0, nullptr, 0));
 
     //Create and start stats task
-    xTaskCreate(button_task, "button_task", 4096, nullptr, 10, &ISR);
+    xTaskCreate(button_task, "button_task", 4096, nullptr, 20, &ISR);
     xTaskCreate(&DHT_task, "DHT_task", 2048, nullptr, 5, nullptr);
-    xTaskCreate(&serial_task, "serial_task", 2048, nullptr, 5, nullptr);
+    xTaskCreate(&serial_task, "serial_task", 2048, nullptr, 10, nullptr);
 }

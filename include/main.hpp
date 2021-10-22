@@ -20,7 +20,7 @@
 #define BTN_PIN GPIO_NUM_5
 
 TaskHandle_t ISR = nullptr;
-bool led_status = false;
+static bool led_status = false;
 
 static SemaphoreHandle_t mutex;
 
