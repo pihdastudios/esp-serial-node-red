@@ -1,6 +1,5 @@
 #pragma once
 #include <iostream>
-#include <sstream>
 #include <iomanip>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
