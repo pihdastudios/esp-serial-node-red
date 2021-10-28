@@ -12,8 +12,14 @@
 #include "driver/uart.h"
 #include "esp_vfs_dev.h"
 #include "esp_wifi.h"
+#include "esp_log.h"
 
-#include "cJSON.h"
+#include "mqtt_client.h"
+
+#define MQTT_PUB_TEMP "esp32/dht/temperature"
+#define MQTT_PUB_HUM  "esp32/dht/humidity"
+
+// #include "cJSON.h"
 
 #include "DHT.hpp"
 
@@ -44,6 +50,10 @@ static void event_handler(void *arg, esp_event_base_t event_base,
 
 
 static int s_retry_num = 0;
+
+const char TAG[] = "MQTT_EXAMPLE";
+
+std::string ip_address;
 
 void DHT_task(void *pvParameter);
 void IRAM_ATTR button_isr_handler(void *pvParameter);
